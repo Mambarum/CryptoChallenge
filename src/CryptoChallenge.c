@@ -13,39 +13,56 @@ static uint8_t index2letter(uint8_t index)
 		return 0;
 }
 
-uint8_t *hex2base64(uint8_t *inbuf, size_t inlen, uint8_t *outbuf, size_t outlen)
+size_t hex2base64(uint8_t *inbuf, size_t inlen, uint8_t *outbuf, size_t outlen)
 {
-	for(int i = 0; i < inlen; i = i + 3)
+	int i;
+
+	if(!inlen || !outlen)
+		return 0;
+
+	if(inlen >= ((SIZE_MAX / 4 - 1) * 3) + 1)
+		return 0;
+
+	size_t minlen = ((inlen - 1) / 3 + 1) * 4;
+
+	if(outlen < minlen)
+		return 0;
+
+	for(i = 2; i < inlen; i = i + 3)
 	{
-		uint32_t trio = (inbuf[i] << 16) | (inbuf[i + 1] << 8) | inbuf[i+2];
+		uint32_t trio = (inbuf[i - 2] << 16) | (inbuf[i - 1] << 8) | inbuf[i];
 		*outbuf++ = index2letter((trio >> 18) & 0x3F);
 		*outbuf++ = index2letter((trio >> 12) & 0x3F);
 		*outbuf++ = index2letter((trio >> 6) & 0x3F);
 		*outbuf++ = index2letter(trio & 0x3F);
 	}
 
-	return outbuf;
+	i -= 2;
+	if(i != inlen)
+	{
+		uint32_t trio = 0;
+		trio |= (uint32_t)(inbuf[i] << 16);
+
+		if((inlen - i) == 2)
+		{
+			trio |= (uint32_t)(inbuf[i + 1] << 8);
+		}
+		*outbuf++ = index2letter((trio >> 18) & 0x3F);
+		*outbuf++ = index2letter((trio >> 12) & 0x3F);
+		if((inlen - i) == 2)
+			*outbuf++ = index2letter((trio >> 6) & 0x3F);
+		else
+			*outbuf++ = '=';
+
+		*outbuf++ = '=';
+	}
+
+	return minlen;
 }
 
+int32_t run_all_tests(uint32_t num);
+
 int main(int argc, char **argv) {
-	uint8_t buf[] = {0x49, 0x27, 0x6d, 0x20, 0x6b, 0x69, 0x6c, 0x6c, 0x69, 0x6e, 0x67, 0x20, 0x79, 0x6f,
-					 0x75, 0x72, 0x20, 0x62, 0x72, 0x61, 0x69, 0x6e, 0x20, 0x6c, 0x69, 0x6b, 0x65, 0x20,
-					 0x61, 0x20, 0x70, 0x6f, 0x69, 0x73, 0x6f, 0x6e, 0x6f, 0x75, 0x73, 0x20, 0x6d, 0x75,
-					 0x73, 0x68, 0x72, 0x6f, 0x6f, 0x6d};
-
-	printf("in len = %ld\n", sizeof(buf));
-	for(int i = 0; i < sizeof(buf); i++)
-		printf("%x ", buf[i]);
-
-	printf("\n");
-
-	uint8_t base64buf[70];
-	hex2base64(buf, sizeof(buf), base64buf, sizeof(base64buf));
-
-	printf("out len = %ld\n", sizeof(base64buf));
-	for(int i = 0; i < sizeof(base64buf); i++)
-		printf("%c ", base64buf[i]);
-
-	printf("\n");
+	run_all_tests(0);
 	return 0;
 }
