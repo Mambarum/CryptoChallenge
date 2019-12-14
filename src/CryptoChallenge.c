@@ -60,6 +60,12 @@ size_t hex2base64(uint8_t *inbuf, size_t inlen, uint8_t *outbuf, size_t outlen)
 	return minlen;
 }
 
+void fixed_length_xor(uint8_t *in, uint8_t *inout, size_t len)
+{
+	for(size_t i = 0; i < len; i++)
+		inout[i] = inout[i] ^ in[i];
+}
+
 int32_t run_all_tests(uint32_t num);
 
 int main(int argc, char **argv) {
